@@ -1,0 +1,2548 @@
+<!doctype html>
+<html lang="uk">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Калібрування впевненості — тест</title>
+
+    <!-- Chart.js та html2canvas (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+    <style>
+        /* Основні стилі, адаптивність та темна тема */
+        /* ============================ */
+        /* Основні кольори та теми */
+        /* ============================ */
+        :root {
+            --accent: #6200ea;
+            --accent-weak: #6200ea33;
+            --bg: #f4f4f4;
+            --card: #ffffff;
+            --text: #222;
+            --muted: #666;
+            --success: #16a34a;
+            --answer: #eff6f0;
+        }
+
+        .dark {
+            --bg: #111217;
+            --card: #16161b;
+            --text: #e6e6e9;
+            --muted: #a0a0a6;
+            --answer: #444544;
+        }
+
+        /* ============================ */
+        /* Базові стилі сторінки */
+        /* ============================ */
+        html,
+        body {
+            /* height: 100%;*/
+            /* margin: 0; */
+            margin: 0px auto;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', Arial, Helvetica, sans-serif;
+        }
+
+        .app {
+            max-width: 800px;
+            margin: 0px auto;
+            padding: 5px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--accent);
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 24px;
+            box-shadow: 0 10px 12px rgba(50, 0, 200, 0.4);
+        }
+
+        .toggle-theme {
+            background: #fff;
+            color: var(--accent);
+            border: 0;
+            padding: 6px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-theme:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.95);
+        }
+
+        /* ============================ */
+        /* Картки та елементи контенту */
+        /* ============================ */
+        .card {
+            border: 1px solid var(--accent);
+            background: var(--card);
+            padding: 18px;
+            border-radius: 24px;
+            margin-top: 5px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 10px 24px rgba(50, 0, 50, 0.6);
+        }
+
+        .card2 {
+            border: 1px solid var(--accent);
+            background: var(--card);
+            padding: 18px;
+            border-radius: 24px;
+            margin-top: 10px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card2:hover {
+            box-shadow: 0 10px 24px rgba(50, 0, 50, 0.6);
+        }
+
+
+        .group {
+            border: 1px solid var(--accent);
+            background: #ffffff;
+            padding: 15px 5px 20px;
+            border-radius: 24px;
+            margin-top: 5px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            transition: box-shadow 0.2s ease;
+        }
+
+        .group:hover {
+            box-shadow: 0 10px 24px rgba(50, 0, 50, 0.6);
+
+        }
+
+        /* коли згорнуто – ховаємо весь контент окрім заголовка */
+        .group.collapsed> :not(.group-title) {
+            display: none;
+        }
+
+        .group-title {
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+
+
+
+
+        h1 {
+            margin: 1px 0;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .meta {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            color: var(--muted);
+            font-size: 16px;
+        }
+
+        .question img {
+            display: block;
+            margin: 8px auto 0;
+            /* центрування по горизонталі */
+            width: auto;
+            /* щоб не розтягувалося */
+            max-width: 100%;
+            /* адаптивно для екрана */
+            height: auto;
+            max-height: 40vh;
+            object-fit: contain;
+            border-radius: 6px;
+        }
+
+
+        .comment {
+            font-size: 16px;
+            font-weight: 700;
+            margin-top: 10px;
+            font-weight: 600;
+
+        }
+
+
+        .answers {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .answer {
+            padding: 5px;
+            border-radius: 10px;
+            border: 2px solid rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            background: var(--answer);
+            /* display: flex; */
+            gap: 2px;
+            align-items: center;
+            transition: all 0.25s ease;
+        }
+
+        .answer:hover {
+            background: var(--accent-weak);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+        }
+
+        .answer.selected {
+            outline: 2px solid var(--accent);
+            background: linear-gradient(90deg, var(--accent-weak), transparent);
+
+        }
+
+        .answer img {
+            max-width: 96px;
+            border-radius: 8px;
+        }
+
+        /* ============================ */
+        /* Вибір впевненості */
+        /* ============================ */
+        .confidence {
+            margin-top: 12px;
+            margin-bottom: 12px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .range-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+        }
+
+        #confidenceRange {
+            width: 100%;
+        }
+
+        #rangeValue {
+            text-align: center;
+            font-weight: bold;
+        }
+
+
+        .conf:hover {
+            background: var(--accent-weak);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+        }
+
+        .conf {
+            background: var(--answer);
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .conf.selected {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        /* ============================ */
+        /* Прогресбар */
+        /* ============================ */
+        .progress-container {
+            width: 100%;
+            background: #e9e9e9;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 10px;
+            margin-top: 2px;
+            margin-bottom: 2px;
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: var(--success);
+            width: 0;
+            transition: width 0.3s ease;
+        }
+
+        /* ============================ */
+        /* Кнопки */
+        /* ============================ */
+        button {
+            margin-top: 10px;
+
+            font-family: Inter, Arial, sans-serif;
+            font-weight: 600;
+            padding: 10px 40px;
+            border-radius: 12px;
+
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Кнопка Далі */
+        #nextBtn {
+            background: linear-gradient(90deg, #6200ea, #9b5de5);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+        }
+
+        #nextBtn:hover {
+            background: linear-gradient(90deg, #0ac599, #9b5de5);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.9);
+        }
+
+        /* Кнопка Вийти та ghost */
+        button.ghost {
+            background: transparent;
+            border: 2px solid var(--accent);
+            color: var(--accent);
+        }
+
+        button.ghost:hover {
+            background: linear-gradient(90deg, #ea00b0, #9b5de5);
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.9);
+        }
+
+        /* ============================ */
+        /* Додаткові стилі */
+        /* ============================ */
+        .small-muted {
+            font-size: 16px;
+            color: var(--muted);
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 30vh;
+            height: auto;
+            aspect-ratio: 4/3;
+        }
+
+        #calibrationChart {
+            width: 100%;
+            max-height: 250px;
+            /* або 300px */
+        }
+
+
+        /* ============================ */
+        /* Таблиця */
+        /* ============================ */
+        #table {
+            width: 100%;
+
+
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        #table table {
+
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            /* важливо для адаптивності */
+        }
+
+        #table th,
+        #table td {
+            font-size: 14px;
+            padding: 8px 10px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+            white-space: normal;
+            /* дозволяє багаторядковий текст */
+            overflow-wrap: normal;
+            /* не розриває слова */
+            word-break: normal;
+            /* теж забороняє розривати слова */
+        }
+
+
+        @media (max-width: 650px) {
+            #table th {
+                writing-mode: vertical-rl;
+                transform: rotate(180deg);
+                transform-origin: center;
+
+                /* щоб текст був читабельним знизу вверх */
+                white-space: nowrap;
+                padding: 10px 4px;
+                font-size: 14px;
+            }
+        }
+
+
+        .confidence-slider {
+            width: 100%;
+            margin-top: 10px;
+            appearance: none;
+            height: 14px;
+            /* товстіший трек */
+            border-radius: 7px;
+            background: #ddd;
+            outline: none;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .confidence-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #4CAF50;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .confidence-slider:active::-webkit-slider-thumb {
+            background: #388E3C;
+        }
+
+
+
+
+        /* ============================ */
+        /* ім'я користувача */
+        /* ============================ */
+        #user-name {
+            padding: 12px;
+            font-size: 16px;
+            color: #333;
+
+            border: 1px solid #ccc;
+            border-radius: 8px;
+
+            background: var(--card);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        /* Ефект при фокусі */
+        #user-name:focus {
+            border-color: #4A90E2;
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+        }
+
+        /* Стиль плейсхолдера */
+        #user-name::placeholder {
+            color: #999;
+            font-size: 14px;
+        }
+
+        /* ============================ */
+        /* Текст */
+        /* ============================ */
+
+        #questionText {
+            font-size: 20px;
+            /* Чіткий розмір для заголовка */
+            font-weight: 600;
+            /* Напівжирний для акценту */
+            color: #333;
+            /* Основний колір */
+            margin-bottom: 20px;
+            /* Відступ знизу */
+            padding: 15px 20px;
+            /* Внутрішні відступи */
+
+            background: #f9f9f9;
+            /* Легка світла підкладка */
+            border: 1px solid #ddd;
+            /* Тонка рамка */
+            border-radius: 10px;
+            /* Заокруглені кути */
+
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            /* Легка тінь */
+            line-height: 1.5;
+            /* Зручне читання */
+            text-align: center;
+            /* Центрування тексту */
+            word-wrap: break-word;
+            /* Перенос слів при довгих рядках */
+            transition: transform 0.3s ease;
+        }
+
+        #questionText:hover {
+            transform: scale(1.02);
+            /* Легке збільшення при наведенні */
+        }
+
+
+
+        /* ============================ */
+        /* Адаптивність */
+        /* ============================ */
+        @media (max-width: 520px) {
+            .answer {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .answer img {
+                max-width: 100%;
+            }
+
+            .controls {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            button {
+                margin-top: 10px;
+                margin-bottom: 5px;
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+
+
+</head>
+
+<body>
+    <div class="app" id="app">
+
+        <header>
+            <div>
+                <strong>Калібрування впевненості</strong>
+            </div>
+
+        </header>
+
+        <!-- Вступ -->
+        <div class="card" id="introCard">
+            <h2>Калібрування впевненості</h2>
+            <p>
+                У цьому тесті ви будете відповідати на запитання і вказувати,
+                наскільки впевнені у своїй відповіді.
+            </p>
+            <p>
+                Мета – не знати все, а перевірити, наскільки ваша впевненість
+                відповідає реальності.
+            </p>
+            <p>
+                Наприклад: якщо ви впевнені у відповіді на 70%, то у довгій серії
+                подібних питань приблизно 7 із 10 ваших відповідей мають бути правильними.
+                Якщо результат інший – значить, ваша впевненість некалібрована.
+            </p>
+            <p>
+                У фіналі ви отримаєте графік, який покаже, наскільки ваші відчуття
+                впевненості відповідають фактичним результатам.
+            </p>
+            <button id="startBtn">Розпочати тест</button>
+        </div>
+
+
+        <!-- Тестовий блок -->
+        <div class="card" id="testCard">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <h1 id="TopicText">Тест</h1>
+                <div class="meta">
+                    <div id="counterText">Питання 1 з 3</div>
+                </div>
+            </div>
+
+
+            <!-- Прогрес -->
+            <div class="progress-container" aria-hidden="true">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+
+            <!-- Питання -->
+            <div class="question" id="questionArea">
+                <div id="questionText"></div>
+                <!-- картинка питання (додається динамічно, якщо є) -->
+            </div>
+
+            <!-- Варіанти -->
+            <div class="answers" id="answers"></div>
+
+
+            <!-- Кнопки -->
+            <div class="controls">
+                <button id="nextBtn">Далі</button>
+                <button style="display: none"  id="randomTestBtn">Пройти тест рандомно</button>
+
+            </div>
+        </div>
+
+        <!-- Результати -->
+        <div class="card" id="resultCard" style="display:none">
+
+            <!-- Введіть ваше ім'я -->
+            <div class="answers" id="answers">
+                <input type="text" id="user-name" placeholder="Введіть ваше ім'я, і поділіться результатом ) ">
+            </div>
+
+            <div class="card2" id="resultCard">
+                <h1>Кількість правильних відповідей</h1>
+                <div id="summary" class="comment"></div>
+            </div>
+
+            <div class="card2" id="resultCard">
+                <h1>Графік вашої калібровки впевненості</h1>
+                <canvas id="calibrationChart" class="canvas"> </canvas>
+            </div>
+            <div class="card2" id="resultCard">
+                <h1>Результат по групам впевненості</h1>
+                <div id="table" class="table"></div>
+                <div id="comment" class="comment"></div>
+                <div id="comment2" class="comment"></div>
+            </div>
+
+            <div class="card2">
+                <h1>Результат по темам питань</h1>
+                <div id="ResultTopic"> текст</div>
+            </div>
+
+
+
+
+            <div>
+                <button id="shareBtn" class="ghost" type="button">Поділитися результатом</button>
+                <button id="restartBtn" class="ghost">Пройти ще раз</button>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        /* ============================
+           Конфігурація питання/дані
+           ============================ 
+        */
+
+
+        const QUESTIONS = [
+            {
+                text: "Слон є найбільшим ссавцем у світі?",
+                questionImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Elephant_near_ndutu.jpg/960px-Elephant_near_ndutu.jpg",
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 1,
+                explanation: "Найбільший ссавець – синій кит, а не слон.",
+                Topic: "Тварини"
+            },
+
+            {
+                text: "Морські видри іноді тримаються за лапи, коли сплять?",
+                questionImage: 'https://fisher-club.com/_nw/18/51683406.jpg',
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "",
+                Topic: "Тварини",
+            },
+
+            {
+                text: "Сороконіжки мають більше ніг, ніж будь-яка інша тварина?",
+                questionImage: 'https://uborka24.com.ua/wp-content/uploads/2020/04/xcentipede-640x430.jpg.pagespeed.ic.mF2Q1aZ_k7.jpg',
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 1,
+                explanation: "Найбільше ніг має багатоніжка (до 750), а не сороконіжка (до 354).",
+                Topic: "Тварини",
+            },
+            {
+                text: "Ссавці та динозаври співіснували?",
+                questionImage: 'https://24tv.ua/resources/photos/news/202107/1677290.jpg',
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "Перші ссавці з’явилися близько 200 млн років тому, динозаври вимерли близько 65 млн років тому.",
+                Topic: "Тварини",
+            },
+            {
+                text: "Ведмеді можуть лазити по деревах?",
+                questionImage: 'https://korusno-znatu.in.ua/wp-content/uploads/2020/01/1-312-1038x576.jpg.pagespeed.ce.iizBYtBd80.jpg',
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "Вміють",
+                Topic: "Тварини",
+            },
+            {
+                text: "Верблюди зберігають воду в своїх горбах?",
+                questionImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/07._Camel_Profile%2C_near_Silverton%2C_NSW%2C_07.07.2007.jpg/1200px-07._Camel_Profile%2C_near_Silverton%2C_NSW%2C_07.07.2007.jpg',
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 1,
+                explanation: "Верблюди зберігають у горбах жир, а не воду.",
+                Topic: "Тварини",
+            },
+            {
+                text: "Фламінго рожеві, тому що їдять креветок?",
+                questionImage: 'https://vogdog.com/wp-content/uploads/2025/04/Flamingo-Shrimp-1-scaled.jpg',
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "",
+                Topic: "Тварини",
+            },
+            {
+                text: "Гігантська панда харчується переважно бамбуком?",
+                questionImage: 'https://i.obozrevatel.com/news/2020/5/29/14183947583.jpg',
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "Раціон гігантської панди майже повністю складається з бамбуку.",
+                Topic: "Тварини",
+            },
+            {
+                text: "Качкодзьоб є єдиним ссавцем, що відкладає яйця?",
+                questionImage: 'https://www.naturalist.if.ua/wp-content/platypus-olsvik_info.jpg',
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 1,
+                explanation: "Качкодзьоб не єдиний ссавець, що відкладає яйця – є ще єхидна.",
+                Topic: "Тварини",
+            },
+            {
+                text: "Мул – це схрещення віслюка та коня?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "Мул – це дійсно схрещення віслюка та коня",
+                Topic: "Тварини",
+            },
+            {
+                text: "Юлій Цезар народився раніше за Конфуція?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 1,
+                explanation: "Конфуцій (551 р. до н.е.) народився раніше за Юлія Цезаря (100 р. до н.е.).",
+                Topic: "Історичні постаті",
+            },
+            {
+                text: "Фідель Кастро народився раніше за Махатму Ганді?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 1,
+                explanation: "Махатма Ганді (1869) народився раніше за Фіделя Кастро (1926).",
+                Topic: "Історичні постаті",
+            },
+            {
+                text: "Нельсон Мандела народився раніше за Анну Франк?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "Нельсон Мандела (1918) народився раніше за Анну Франк (1929).",
+                Topic: "Історичні постаті",
+            },
+            {
+                text: "Клеопатра народилася раніше за Мухаммеда?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "Клеопатра (69 р. до н.е.) народилася раніше за Мухаммеда (бл. 570 р.).",
+                Topic: "Історичні постаті",
+            },
+            {
+                text: "Вільям Шекспір народився раніше за Жанну д’Арк?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 1,
+                explanation: "Жанна д’Арк (бл. 1412) народилася раніше за Вільяма Шекспіра (1564).",
+                Topic: "Історичні постаті",
+            },
+            {
+                text: "Джордж Вашингтон народився раніше за Сунь-цзи?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 1,
+                explanation: "Сунь-цзи (544 р. до н.е.) народився раніше за Джорджа Вашингтона (1732).",
+                Topic: "Історичні постаті",
+            },
+            {
+                text: "Чингісхан народився раніше за Леонардо да Вінчі?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "Чингісхан (бл. 1160) народився раніше за Леонардо да Вінчі (1452).",
+                Topic: "Історичні постаті",
+            },
+            {
+                text: "Королева Вікторія народилася раніше за Карла Маркса?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 1,
+                explanation: "Карл Маркс (1818) народився раніше за Королеву Вікторію (1819).",
+                Topic: "Історичні постаті",
+            },
+            {
+                text: "Саддам Хусейн народився раніше за Мерилін Монро?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 1,
+                explanation: "Мерилін Монро (1926) народилася раніше за Саддама Хусейна (1937).",
+                Topic: "Історичні постаті",
+            },
+            {
+                text: "Альберт Ейнштейн народився раніше за Мао Цзедуна?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "Альберт Ейнштейн (1879) народився раніше за Мао Цзедуна (1893).",
+                Topic: "Історичні постаті",
+            },
+            {
+                text: "В 2019 році в Німеччині було більше людей, ніж у Франції?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "Німеччина (84 млн) має більше населення, ніж Франція (65 млн).",
+                Topic: "Географія",
+            },
+            {
+                text: "В 2019 році в Японії було більше людей, ніж у Південній Кореї?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "Японія (127 млн) має більше населення, ніж Південна Корея (51 млн).",
+                Topic: "Географія",
+            },
+            {
+                text: "В 2019 році в Бразилії було більше людей, ніж в Аргентині?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "Бразилія (211 млн) має більше населення, ніж Аргентина (45 млн).",
+                Topic: "Географія",
+            },
+            {
+                text: "В 2019 році в Єгипті було більше людей, ніж у Ботсвані?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "Єгипет (100 млн) має більше населення, ніж Ботсвана (2 млн).",
+                Topic: "Географія",
+            },
+            {
+                text: "В 2019 році в Мексиці було більше людей, ніж у Гватемалі?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "Мексика (128 млн) має більше населення, ніж Гватемала (18 млн).",
+                Topic: "Географія",
+            },
+            {
+                text: "В 2019 році в Панамі було більше людей, ніж у Белізі?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "Панама (4 млн) має більше населення, ніж Беліз (390 тис.).",
+                Topic: "Географія",
+            },
+            {
+                text: "В 2019 році в Ямайці було більше людей, ніж у Гаїті?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 1,
+                explanation: "Гаїті (11 млн) має більше населення, ніж Ямайка (3 млн).",
+                Topic: "Географія",
+            },
+            {
+                text: "В 2019 році в Греції було більше людей, ніж у Норвегії?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "Греція (10 млн) має більше населення, ніж Норвегія (5 млн).",
+                Topic: "Географія",
+            },
+            {
+                text: "В 2019 році в Китаї було більше людей, ніж в Індії?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "Китай (1,43 млрд) має більше населення, ніж Індія (1,37 млрд).",
+                Topic: "Географія",
+            },
+            {
+                text: "В 2019 році в Іраку було більше людей, ніж в Ірані?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 1,
+                explanation: "Іран (83 млн) має більше населення, ніж Ірак (39 млн).",
+                Topic: "Географія",
+            },
+            {
+                text: "Марс має один супутник, так само як Земля?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 1,
+                explanation: "Марс має два супутники – Фобос і Деймос.",
+                Topic: "Правда, чи вигадка?",
+            },
+            {
+                text: "Цинга викликана дефіцитом вітаміну С?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "",
+                Topic: "Правда, чи вигадка?",
+            },
+            {
+                text: "Латунь виготовляють із заліза та міді?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 1,
+                explanation: "Латунь складається з цинку та міді, а не з заліза та міді.",
+                Topic: "Правда, чи вигадка?",
+            },
+            {
+                text: "Одна столова ложка олії має більше калорій, ніж одна столова ложка масла?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "1 ст. ложка олії ≈120 калорій, масла – до 110 калорій.",
+                Topic: "Правда, чи вигадка?",
+            },
+            {
+                text: "Гелій є найлегшим елементом?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 1,
+                explanation: "Найлегший елемент – водень, а не гелій.",
+                Topic: "Правда, чи вигадка?",
+            },
+            {
+                text: "Застуда викликається бактеріями?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 1,
+                explanation: "Застуда викликається вірусами, а не бактеріями.",
+                Topic: "Правда, чи вигадка?",
+            },
+            {
+                text: "Найглибше місце на Землі знаходиться в Тихому океані?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "",
+                Topic: "Правда, чи вигадка?",
+            },
+            {
+                text: "Пори року спричинені тим, що Земля рухається навколо Сонця по еліптичній орбіті?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 1,
+                explanation: "Пори року спричинені нахилом осі Землі, а не формою орбіти.",
+                Topic: "Правда, чи вигадка?",
+            },
+            {
+                text: "Юпітер є найбільшою планетою у Сонячній системі?",
+                questionImage: null,
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "",
+                Topic: "Правда, чи вигадка?",
+            },
+            {
+                text: "Атоми у твердому тілі розташовані щільніше, ніж атоми в газі?",
+                questionImage: 'https://icdn.lenta.ru/images/2021/05/24/14/20210524141416422/square_1280_68e25f8c666fda79f394dd142a327435.jpg',
+                options: [
+                    { text: "Так", image: null },
+                    { text: "Ні", image: null }
+                ],
+                answer: 0,
+                explanation: "",
+                Topic: "Правда, чи вигадка?",
+            }
+
+        ];
+
+
+
+
+
+
+        // Фіксовані рівні впевненості
+        const CONF_LEVELS = [55, 65, 75, 85, 95];
+
+
+        // LocalStorage ключ
+        const STORAGE_KEY = 'calibration_quiz_history_v1';
+
+        /* ============================
+           Стан і DOM-посилання
+           ============================ */
+        let summary = []; // об'єкт для зберігання результату проходження тесту 
+        let state = {
+            index: 0,       // поточне питання
+            question: null,
+            score: 0,       // число правильних
+            selected: null, // індекс вибраної відповіді
+            confidence: null, // вибраний рівень впевненості
+            topic: null, // категорія питання (опціонально)
+            startTime: null,
+            timeSpent: null
+        };
+
+        const el = {
+            app: document.getElementById('app'),
+            testCard: document.getElementById('testCard'),
+            questionText: document.getElementById('questionText'),
+            answers: document.getElementById('answers'),
+            confidence: document.getElementById('confidence'),
+            nextBtn: document.getElementById('nextBtn'),
+            progressBar: document.getElementById('progressBar'),
+            counterText: document.getElementById('counterText'),
+            resultCard: document.getElementById('resultCard'),
+            summary: document.getElementById('summary'),
+            chartCanvas: document.getElementById('calibrationChart'),
+            comment: document.getElementById('comment'),
+            shareBtn: document.getElementById('shareBtn'),
+            restartBtn: document.getElementById('restartBtn'),
+            historyList: document.getElementById('historyList'),
+            randomTestBtn: document.getElementById('randomTestBtn'),
+            TopicText: document.getElementById('TopicText')
+
+        };
+
+        let calibrationChart = null; // збережемо Chart.js інстанс, щоб знищити при оновленні
+
+
+
+
+        /* ============================
+           Ініціалізація
+           ============================ */
+        function init() {
+
+            // початкова сторінка
+            startpage();
+            // приховати стилі
+            document.getElementById('testCard').style.display = 'none';
+
+            // глобальні обробники (не всі)
+            el.nextBtn.addEventListener('click', onNext);
+            el.shareBtn.addEventListener('click', onShare);
+            el.restartBtn.addEventListener('click', restartTest);
+            el.randomTestBtn.addEventListener('click', random);
+
+            // обробник для спойлерів
+            initGroupSpoilers();
+        }
+
+
+
+        /* ============================
+           Обробка вибору
+           ============================ */
+        function selectAnswer(i, elItem) {
+            state.selected = i;
+            // візуально виділяємо
+            Array.from(el.answers.children).forEach(c => c.classList.remove('selected'));
+            if (elItem) elItem.classList.add('selected'); // <-- перевірка
+        }
+
+        function selectConfidence(value, elItem) {
+            state.confidence = value;
+            Array.from(el.confidence.children).forEach(c => c.classList.remove('selected'));
+            if (elItem) elItem.classList.add('selected'); // <-- перевірка
+        }
+
+
+        // універсальна функція для спойлерів
+        function initGroupSpoilers() {
+            document.addEventListener("click", e => {
+                const title = e.target.closest(".group-title");
+                if (!title) return; // клік був не по заголовку
+
+                const group = title.closest(".group");
+                if (!group) return;
+
+                // міняємо стан
+                group.classList.toggle("collapsed");
+
+                // міняємо стрілку
+                const arrow = group.querySelector(".arrow");
+                if (arrow) {
+                    arrow.textContent = group.classList.contains("collapsed") ? "►" : "▼";
+                }
+            });
+        }
+
+        /* ============================
+        Стартова сторінка "розпочати тест"
+        ============================ */
+        function startpage() {
+            document.getElementById('startBtn').addEventListener('click', () => {
+                // приховати стилі
+                document.getElementById('introCard').style.display = 'none';
+                // показати стилі
+                document.getElementById('testCard').style.display = 'block';
+                renderQuestion();
+            });
+        }
+
+
+
+
+
+
+        /* ============================
+           Рендер питання + прогрес
+           ============================ */
+        function renderQuestion() {
+            // таймер для кожного питання
+            renderTimerForQuestion();
+
+            // поточне питання
+            const q = QUESTIONS[state.index];
+
+            // Ініціалізація таймера для цього питання
+            state.startTime = Date.now();
+
+            // лічильник питань
+            el.counterText.textContent = `Питання ${state.index + 1} з ${QUESTIONS.length}`;
+
+            // прогрес бар (%) — (index)/total, після відповіді буде рухатись при зміні state.index
+            const percent = Math.round((state.index) / QUESTIONS.length * 100);
+            el.progressBar.style.width = percent + '%';
+
+            // текст питання
+            el.questionText.textContent = q.text;
+
+            // текст теми питання
+            el.TopicText.textContent = q.Topic;
+
+            // картинка питання: створюємо/оновлюємо або видаляємо, якщо немає
+            let qImg = document.getElementById('q-image-inline');
+            if (q.questionImage) {
+                if (!qImg) {
+                    qImg = document.createElement('img');
+                    qImg.id = 'q-image-inline';
+                    qImg.style.borderRadius = '8px';
+                    qImg.style.marginTop = '8px';
+                    document.getElementById('questionArea').appendChild(qImg);
+
+                }
+                qImg.src = q.questionImage;
+                qImg.style.display = '';
+            } else {
+                if (qImg) qImg.remove();
+            }
+
+            // варіанти відповідей
+            el.answers.innerHTML = '';
+            state.selected = null;
+            state.selectedConfidence = {}; // зберігаємо для поточного питання
+
+            q.options.forEach((opt, i) => {
+                const d = document.createElement('div');
+                d.className = 'answer';
+                d.id = 'answer' + i;
+                d.tabIndex = i;
+
+                // Текст відповіді
+                const span = document.createElement('span');
+                span.id = 'Text';
+                span.textContent = opt.text;
+                d.appendChild(span);
+
+                // Якщо є картинка у варіанті
+                if (opt.image) {
+                    const im = document.createElement('img');
+                    im.src = opt.image;
+                    im.alt = opt.text;
+                    im.style.maxWidth = '120px';
+                    im.style.marginLeft = '8px';
+                    d.appendChild(im);
+                }
+
+                // Повзунок впевненості
+                const slider = document.createElement('input');
+                slider.type = 'range';
+                slider.min = 55;
+                slider.max = 95;
+                slider.step = 10;
+                slider.value = 55; // початкове значення
+                slider.className = 'confidence-slider';
+                slider.style.width = '100%';
+                slider.style.marginTop = '5px';
+
+                // Підпис для значення
+                const sliderLabel = document.createElement('div');
+                sliderLabel.textContent = `Впевненість: ${slider.value}%`;
+                sliderLabel.style.fontSize = '14px';
+                sliderLabel.style.marginTop = '4px';
+
+
+                // Обробник зміни повзунка
+                slider.addEventListener('input', () => {
+                    sliderLabel.textContent = `Впевненість: ${slider.value}%`;
+                    state.selectedConfidence[i] = parseInt(slider.value);
+
+                    // Якщо ця відповідь ще не вибрана — вибираємо її
+                    if (state.selected !== i) {
+                        selectAnswer(i, d);
+                    }
+
+                    // Оновлюємо впевненість
+                    state.confidence = parseInt(slider.value);
+                });
+
+
+                // Вибір відповіді
+                d.addEventListener('click', () => {
+                    selectAnswer(i, d);
+                    state.confidence = parseInt(slider.value); // фіксуємо поточне значення повзунка
+                });
+                d.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        selectAnswer(i, d);
+                        state.confidence = parseInt(slider.value);
+                    }
+                });
+
+                d.appendChild(slider);
+                d.appendChild(sliderLabel);
+                el.answers.appendChild(d);
+
+
+            });
+
+
+            // якщо ми на останньому питанні — змінюємо текст кнопки на "Завершити"
+            el.nextBtn.textContent = state.index === QUESTIONS.length - 1 ? 'Завершити' : 'Далі';
+        }
+
+
+
+
+
+
+
+
+
+
+        /* ============================
+         Зберігаємо відповідь у історії
+         ============================ */
+        function saveAnswer(questionIndex, selectedIndex, confidence, customTime = null) {
+            const q = QUESTIONS[questionIndex];
+            const isCorrect = (selectedIndex === q.answer);
+
+            // Обчислюємо час (у секундах)
+            const timeSpentSec = customTime !== null
+                ? customTime
+                : (state.startTime ? Math.round((Date.now() - state.startTime) / 1000) : 0);
+
+            // Створюємо запис
+            const rec = {
+                index: questionIndex + 1, // номер питання
+                topic: q.Topic, // тема питання
+                date: new Date().toISOString(),
+                timeSpent: timeSpentSec,
+                question: q.text,
+                correct: isCorrect,
+                selectedIndex,
+                selectedText: q.options[selectedIndex].text,
+                confidence,
+                correctAnswer: q.options[q.answer].text,
+
+            };
+
+            // Додаємо у LocalStorage та summary
+            const hist = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+            hist.push(rec);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(hist));
+            summary.push(rec);
+            // console.log(summary);
+
+            if (isCorrect) state.score += 1;
+
+            // Оновлюємо час для наступного питання (тільки якщо це не рандом)
+            if (customTime === null) {
+                state.startTime = Date.now();
+            }
+        }
+
+        /* ============================
+           Переходи: Далі / Завершити
+           ============================ */
+        function onNext() {
+            if (state.selected === null || state.confidence === null) {
+                alert('Оберіть відповідь і рівень впевненості.');
+                return;
+            }
+
+            saveAnswer(state.index, state.selected, state.confidence);
+            state.index += 1;
+
+            // Оновлюємо прогрес
+            const percent = Math.round((state.index) / QUESTIONS.length * 100);
+            el.progressBar.style.width = percent + '%';
+
+            if (state.index >= QUESTIONS.length) {
+                renderResult();
+            } else {
+                renderQuestion();
+            }
+        }
+
+
+        /* ============================
+           Рандомне проходження
+           ============================ */
+        function random() {
+            console.log("random test");
+
+            // Обнуляємо стан
+            state.index = 0;
+            state.score = 0;
+            summary = [];
+            localStorage.removeItem(STORAGE_KEY);
+            state.startTime = Date.now();
+
+            QUESTIONS.forEach((q, i) => {
+                const randAnswer = Math.floor(Math.random() * q.options.length);
+                const randConf = CONF_LEVELS[Math.floor(Math.random() * CONF_LEVELS.length)];
+                const randTime = Math.floor(Math.random() + Math.abs(Math.cos(i / 10) * 20)) + 5; // від 5 до 60 секунд
+
+                // Виклик збереження
+                saveAnswer(i, randAnswer, randConf, randTime);
+
+            });
+
+            renderResult();
+        }
+
+
+
+
+
+
+
+        /* ============================
+          Показ результату: графік, коментар, Brier
+          ============================ */
+        function renderResult() {
+            timer_active = false;
+            el.testCard.style.display = 'none';
+            el.resultCard.style.display = '';
+            el.resultCard.innerHTML = ''; // очистка перед новим показом
+
+            // додати результати
+
+
+            renderCorrectAnswerCard();
+            renderConfidenceGroups(summary);
+            renderTimeHistogramCard(summary);
+            renderInterpretation(summary);
+
+            renderCalibrationChartCard(summary);
+            renderGroupCard();
+            renderResultByTopicCard();
+            renderResultButtons();
+            renderDetailedSummaryCard();
+        }
+
+
+        // змінні для таймера
+        let timerInterval;
+        let timer_active = true;
+
+        function renderTimerForQuestion(duration = 30) { // duration в секундах
+            if (!timer_active) return;
+            const testCard = document.getElementById('testCard');
+
+            // --- шукаємо або створюємо контейнер ---
+            let progressContainer = document.getElementById('questionTimer');
+            let progress, timeLabel, autoLabel;
+
+            if (!progressContainer) {
+                // якщо вперше — створюємо всі елементи
+                timeLabel = document.createElement('div');
+                timeLabel.id = 'questionTimeLabel';
+                timeLabel.style.fontSize = '14px';
+                timeLabel.style.marginBottom = '2px';
+                testCard.insertBefore(timeLabel, testCard.firstChild);
+
+                progressContainer = document.createElement('div');
+                progressContainer.id = 'questionTimer';
+                progressContainer.style.width = '100%';
+                progressContainer.style.height = '20px';
+                progressContainer.style.border = '1px solid #ccc';
+                progressContainer.style.borderRadius = '5px';
+                progressContainer.style.overflow = 'hidden';
+                progressContainer.style.marginBottom = '5px';
+
+                progress = document.createElement('div');
+                progress.id = 'questionTimerFill';
+                progress.style.height = '100%';
+                progress.style.width = '0%';
+                progress.style.backgroundColor = 'green';
+                progress.style.transition = 'width 0.1s, background-color 0.1s';
+
+                progressContainer.appendChild(progress);
+                testCard.insertBefore(progressContainer, timeLabel.nextSibling);
+
+                autoLabel = document.createElement('div');
+                autoLabel.id = 'questionAutoLabel';
+                autoLabel.style.fontSize = '12px';
+                autoLabel.style.color = '#888';
+                autoLabel.style.marginBottom = '10px';
+                autoLabel.textContent = `⚠️ Якщо час закінчиться, буде автоматично вибрана випадкова відповідь і тест перейде далі.`;
+                testCard.insertBefore(autoLabel, progressContainer.nextSibling);
+            } else {
+                // якщо вже є — беремо існуючі
+                progress = document.getElementById('questionTimerFill');
+                timeLabel = document.getElementById('questionTimeLabel');
+                autoLabel = document.getElementById('questionAutoLabel');
+            }
+
+            // Очищаємо попередній інтервал
+            if (timerInterval) clearInterval(timerInterval);
+
+            const startTime = Date.now();
+            let timeUpHandled = false;
+
+            timerInterval = setInterval(() => {
+                const elapsed = (Date.now() - startTime) / 1000; // секунди
+                const percent = Math.min((elapsed / duration) * 100, 100);
+                progress.style.width = percent + '%';
+
+                // Плавна зміна кольору: зелений → червоний
+                const r = Math.min(255, Math.floor((elapsed / duration) * 255));
+                const g = Math.max(0, 255 - Math.floor((elapsed / duration) * 255));
+                progress.style.backgroundColor = `rgb(${r},${g},0)`;
+
+                // Показуємо час
+                const currentTime = new Date().toLocaleTimeString();
+                timeLabel.textContent = `Час: ${currentTime} | Таймер: ${elapsed.toFixed(1)}s / ${duration}s`;
+
+                // Якщо час вийшов і ще не оброблено
+                if (elapsed >= duration && !timeUpHandled) {
+                    timeUpHandled = true;
+
+                    const q = QUESTIONS[state.index];
+                    const randomIndex = Math.floor(Math.random() * q.options.length);
+                    state.selected = randomIndex;
+                    state.confidence = 0;
+                    state.selectedConfidence[randomIndex] = 0;
+
+                    // Відображаємо вибрану відповідь
+                    const answerDiv = document.getElementById('answer' + randomIndex);
+                    if (answerDiv) answerDiv.classList.add('selected');
+
+                    // Оновлюємо повзунок
+                    const slider = answerDiv.querySelector('.confidence-slider');
+                    if (slider) slider.value = 0;
+
+                    const sliderLabel = answerDiv.querySelector('.confidence-slider + div');
+                    if (sliderLabel) sliderLabel.textContent = `Впевненість: 0%`;
+
+                    // Переходимо до наступного питання
+                    onNext();
+                    console.log("Тік таймера");
+                }
+            }, 100);
+        }
+
+
+
+
+
+
+
+        function renderResultButtons() {
+            const div = document.createElement('div');
+            div.style.marginTop = '20px';
+            div.style.display = 'flex';
+            div.style.gap = '10px';
+
+            const shareBtn = document.createElement('button');
+            shareBtn.id = 'shareBtn';
+            shareBtn.className = 'ghost';
+            shareBtn.type = 'button';
+            shareBtn.innerText = 'Поділитися результатом';
+            shareBtn.addEventListener('click', () => {
+                onShare(); // твоя функція перезапуску тесту
+            });
+
+
+            const restartBtn = document.createElement('button');
+            restartBtn.id = 'restartBtn';
+            restartBtn.className = 'ghost';
+            restartBtn.innerText = 'Пройти ще раз';
+            restartBtn.addEventListener('click', () => {
+                restartTest(); // твоя функція перезапуску тесту
+            });
+
+            div.appendChild(shareBtn);
+            div.appendChild(restartBtn);
+
+            el.resultCard.appendChild(div);
+        }
+
+
+
+
+        function createGroup(titleText, contentNode) {
+            const group = document.createElement("div");
+            group.className = "group";
+
+            // Заголовок
+            const title = document.createElement("div");
+            title.className = "group-title";
+
+            const arrow = document.createElement("span");
+            arrow.className = "arrow";
+            arrow.textContent = "▼";
+
+            const titleNode = document.createTextNode(" " + titleText);
+
+            title.appendChild(arrow);
+            title.appendChild(titleNode);
+
+            // Контент
+            const content = document.createElement("div");
+            content.className = "group-content";
+            content.appendChild(contentNode);
+
+            // Збираємо
+            group.appendChild(title);
+            group.appendChild(content);
+
+            return group;
+        }
+
+
+
+        /* ============================
+           Картка підсумку
+           ============================ */
+        function renderCorrectAnswerCard() {
+            const p = document.createElement("div");
+            p.innerHTML = `Правильно: <span style="color: green;">${state.score}</span> з ${QUESTIONS.length}`;
+
+            const group = createGroup("Підсумок", p);
+
+            el.resultCard.appendChild(group);
+        }
+
+
+
+
+        function renderCalibrationChartCard(summary) {
+            const card = document.createElement('div');
+            card.innerHTML = `
+        <canvas id="chartCanvas" style="height:300px;"></canvas>
+        <p id="brier"></p>
+    `;
+
+            const group = createGroup("Калібрування", card);
+            el.resultCard.appendChild(group);
+
+            // Динамічні рівні впевненості з summary
+            const levels = Array.from(new Set(summary.map(h => h.confidence))).sort((a, b) => a - b);
+
+            // Підрахунок правильних і загальних відповідей по рівнях
+            const map = {};
+            levels.forEach(l => map[l] = { correct: 0, incorrect: 0, total: 0 });
+            summary.forEach(h => {
+                if (map[h.confidence] !== undefined) {
+                    map[h.confidence].total += 1;
+                    if (h.correct) map[h.confidence].correct += 1;
+                    else map[h.confidence].incorrect += 1;
+                }
+            });
+
+            const labels = levels.map(l => l + '%');
+            const actuals = levels.map(l => {
+                const d = map[l];
+                return d.total > 0 ? Number((d.correct / d.total * 100).toFixed(1)) : 0;
+            });
+            const correctCounts = levels.map(l => map[l].correct);
+            const incorrectCounts = levels.map(l => map[l].incorrect);
+
+            // Brier Score
+            if (summary.length > 0) {
+                const sum = summary.reduce((acc, h) => {
+                    const p = h.confidence / 100.0;
+                    const o = h.correct ? 1 : 0;
+                    return acc + Math.pow(o - p, 2);
+                }, 0);
+                const brier = Number((sum / summary.length).toFixed(3));
+                card.querySelector('#brier').innerText = `Brier Score: ${brier}`;
+            }
+
+            // Створюємо графік
+            if (window.calibrationChart) window.calibrationChart.destroy();
+            window.calibrationChart = new Chart(card.querySelector('#chartCanvas').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Фактична точність (%)',
+                            data: actuals,
+                            borderColor: getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#6200ea',
+                            backgroundColor: 'rgba(98,0,234,0.12)',
+                            tension: 0.35,
+                            fill: true,
+                            pointRadius: 6
+                        },
+                        {
+                            label: 'Ідеальна калібровка (%)',
+                            data: levels,
+                            borderColor: '#16a34a',
+                            borderDash: [6, 6],
+                            fill: false,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Правильні відповіді (кількість)',
+                            data: correctCounts,
+                            borderColor: '#22c55e',
+                            backgroundColor: 'rgba(34,197,94,0.2)',
+                            type: 'bar',
+                            yAxisID: 'yCounts'
+                        },
+                        {
+                            label: 'Неправильні відповіді (кількість)',
+                            data: incorrectCounts,
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239,68,68,0.2)',
+                            type: 'bar',
+                            yAxisID: 'yCounts'
+                        }
+                    ]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    scales: {
+                        y: { min: 0, max: 100, title: { display: true, text: '% правильних' } },
+                        yCounts: {
+                            position: 'right',
+                            beginAtZero: true,
+                            title: { display: true, text: 'Кількість відповідей' },
+                            grid: { drawOnChartArea: false } // щоб не перетинати основну шкалу
+                        },
+                        x: { title: { display: true, text: 'Рівень впевненості (%)' } }
+                    },
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+
+
+        /* ============================
+           Картка груп по confidence
+           ============================ */
+        function renderGroupCard() {
+            const card = document.createElement('div');
+            const group = createGroup("Результати за рівнем впевненості", card);
+            el.resultCard.appendChild(group);
+
+
+            const groups = {};
+            summary.forEach(item => {
+                const conf = Number(item.confidence);
+                if (!groups[conf]) groups[conf] = { correct: 0, wrong: 0, time: 0 };
+                if (item.correct) groups[conf].correct += 1;
+                else groups[conf].wrong += 1;
+                groups[conf].time += Number(item.timeSpent) || 0;
+            });
+
+            const sortedKeys = Object.keys(groups).sort((a, b) => a - b);
+            const rows = sortedKeys.map(conf => {
+                const g = groups[conf];
+                const total = g.correct + g.wrong;
+                const percent = total > 0 ? ((g.correct / total) * 100).toFixed(1) : 0;
+                return `
+            <tr>
+                <td>${conf}%</td>
+                <td>${g.correct}</td>
+                <td>${g.wrong}</td>
+                <td>${percent}%</td>
+                <td>${g.time.toFixed(1)}</td>
+            </tr>
+        `;
+            }).join('');
+
+            const tableHTML = `
+        <table class="table" id="table" border="1" cellpadding="5" style="border-collapse: collapse; width:100%;">
+            <thead>
+                <tr>
+                    <th>Впевненість</th>
+                    <th>Правильні</th>
+                    <th>Неправильні</th>
+                    <th>% Правильних</th>
+                    <th>Сумарний час (сек)</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rows}
+            </tbody>
+        </table>
+    `;
+            card.innerHTML += tableHTML;
+        }
+
+        /* ============================
+           Картка результатів по темах
+           ============================ */
+        function renderResultByTopicCard() {
+            const card = document.createElement('div');
+
+            const group = createGroup("Результати по темах", card);
+            el.resultCard.appendChild(group);
+
+
+            const topicGroups = {};
+            summary.forEach(item => {
+                const topic = item.topic || "Довільна тема";
+                if (!topicGroups[topic]) topicGroups[topic] = { correct: 0, wrong: 0, time: 0 };
+                if (item.correct) topicGroups[topic].correct += 1;
+                else topicGroups[topic].wrong += 1;
+                topicGroups[topic].time += Number(item.timeSpent) || 0;
+            });
+
+            const rows = Object.keys(topicGroups).map(topic => {
+                const g = topicGroups[topic];
+                const total = g.correct + g.wrong;
+                const percent = total > 0 ? ((g.correct / total) * 100).toFixed(1) : 0;
+                return `
+            <tr>
+                <td>${topic}</td>
+                <td>${g.correct}</td>
+                <td>${g.wrong}</td>
+                <td>${percent}%</td>
+                <td>${g.time.toFixed(1)}</td>
+            </tr>
+        `;
+            }).join('');
+
+            const tableHTML = `
+        <table id="table" border="1" cellpadding="5" style="border-collapse: collapse; width:100%;">
+            <thead>
+                <tr>
+                    <th>Тема</th>
+                    <th>Правильні</th>
+                    <th>Неправильні</th>
+                    <th>% Правильних</th>
+                    <th>Сумарний час (сек)</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rows}
+            </tbody>
+        </table>
+    `;
+            card.innerHTML += tableHTML;
+        }
+
+
+
+
+
+        /* ============================
+      Розширена інтерпретація (час + висновки/поради)
+      Використовує createGroup(title, contentNode)
+      ============================ */
+        function renderInterpretation(summary) {
+            if (!summary || summary.length === 0) {
+                const empty = document.createElement('div');
+                empty.textContent = 'Немає даних для інтерпретації.';
+                el.resultCard.appendChild(createGroup('📌 Інтерпретація', empty));
+                return;
+            }
+
+            // --- хелпери ---
+            const fmt = v => (Math.round(v * 10) / 10).toFixed(1); // округлення до 1 знаку
+            const pct = v => fmt(v * 100) + '%';
+            const sumBy = (arr, fn) => arr.reduce((s, x) => s + fn(x), 0);
+
+            // --- базові метрики ---
+            const total = summary.length;
+            const correctCount = sumBy(summary, r => r.correct ? 1 : 0);
+            const accuracy = (correctCount / total) * 100;
+            const avgConfidence = sumBy(summary, r => r.confidence || 0) / total;
+            const bias = avgConfidence - accuracy;
+
+            // --- Brier score ---
+            const brier = sumBy(summary, r => {
+                const p = (r.confidence || 0) / 100;
+                return Math.pow((r.correct ? 1 : 0) - p, 2);
+            }) / total;
+
+            // --- час ---
+            const avgTime = sumBy(summary, r => +r.timeSpent || 0) / total;
+            let longWrong = 0, longCorrect = 0, shortWrong = 0, shortCorrect = 0;
+            summary.forEach(r => {
+                const long = (+r.timeSpent || 0) >= avgTime;
+                if (r.correct) long ? longCorrect++ : shortCorrect++;
+                else long ? longWrong++ : shortWrong++;
+            });
+
+            // --- теми ---
+            const topics = {};
+            summary.forEach(r => {
+                const t = r.topic || 'Без теми';
+                topics[t] ??= { correct: 0, wrong: 0, time: 0, count: 0 };
+                r.correct ? topics[t].correct++ : topics[t].wrong++;
+                topics[t].time += +r.timeSpent || 0;
+                topics[t].count++;
+            });
+
+            const topicStats = Object.entries(topics).map(([topic, g]) => {
+                const percent = (g.correct / g.count) * 100 || 0;
+                const avgT = g.time / g.count || 0;
+                return { topic, percent, avgTime: avgT, ...g };
+            });
+
+            // --- класифікація тем ---
+            const threshold = 70; // поріг % для сильної теми
+            const weakTopics = topicStats.filter(t => t.percent < threshold);
+            const strongTopics = topicStats.filter(t => t.percent >= threshold);
+
+            // --- 1) Аналіз часу ---
+            const timeDiv = document.createElement('div');
+            timeDiv.innerHTML = `
+        <p><b>Середній час на питання:</b> ${fmt(avgTime)} с.</p>
+        <ul>
+            <li><b>Довгі + правильні:</b> ${longCorrect} (${pct(longCorrect / total)})</li>
+            <li><b>Довгі + неправильні:</b> ${longWrong} (${pct(longWrong / total)})</li>
+            <li><b>Короткі + правильні:</b> ${shortCorrect} (${pct(shortCorrect / total)})</li>
+            <li><b>Короткі + неправильні:</b> ${shortWrong} (${pct(shortWrong / total)})</li>
+        </ul>
+    `;
+
+            const longWrongShare = longWrong / total;
+            const shortWrongShare = shortWrong / total;
+            const timeNote = document.createElement('p');
+            if (longWrongShare > 0.12) {
+                timeNote.innerHTML = `<b style="color:crimson">Інтерпретація:</b> Ви часто витрачаєте багато часу, але помиляєтесь. Варто підтягнути базу тем, а не "пиляти" складні питання навмання.`;
+            } else if (shortWrongShare > 0.12) {
+                timeNote.innerHTML = `<b style="color:crimson">Інтерпретація:</b> Багато швидких помилок — ви дієте імпульсивно. Спробуйте додати 10–15 сек перевірки перед вибором.`;
+            } else if (longCorrect > longWrong) {
+                timeNote.innerHTML = `<b style="color:green">Інтерпретація:</b> Час допомагає — ретельність часто приносить правильні відповіді.`;
+            } else {
+                timeNote.innerHTML = `<b>Інтерпретація:</b> Поведінка за часом неоднозначна — дивіться таблиці за темами.`;
+            }
+            timeDiv.appendChild(timeNote);
+            el.resultCard.appendChild(createGroup('⏱ Аналіз часу', timeDiv));
+
+            // --- 2) Інтерпретація і поради ---
+            const interpDiv = document.createElement('div');
+            interpDiv.innerHTML = `
+        <p>
+            Ви дали <b>${correctCount}</b> правильних з <b>${total}</b> (${fmt(accuracy)}%).<br>
+            Середня впевненість: <b>${fmt(avgConfidence)}%</b>.<br>
+            Різниця (впевненість − точність): <b>${fmt(bias)} п.п.</b><br>
+            Brier score: <b>${brier.toFixed(3)}</b> (нижчий — краще).
+        </p>
+    `;
+
+            const calib = document.createElement('p');
+            const calibThreshold = 10;
+            if (bias > calibThreshold)
+                calib.innerHTML = `<b style="color:crimson">Діагноз: перевпевненість.</b> Ви завищуєте оцінки впевненості — ризик систематичних помилок.`;
+            else if (bias < -calibThreshold)
+                calib.innerHTML = `<b style="color:green">Діагноз: недооцінка.</b> Ви занижуєте свої знання — довіряйте собі більше.`;
+            else
+                calib.innerHTML = `<b>Діагноз: добре калібрований.</b> Ваша впевненість близька до фактичної точності.`;
+            interpDiv.appendChild(calib);
+
+
+
+            const example = document.createElement('div');
+            if (bias < -calibThreshold) {
+                example.innerHTML = `<p><b>Що це означає:</b> Ви відповідаєте краще, ніж очікуєте (точність ${fmt(accuracy)}%, впевненість ${fmt(avgConfidence)}%).<br><b>Порада:</b> почніть фіксувати випадки недооцінки — піднімайте планку довіри до себе.</p>`;
+            } else if (bias > calibThreshold) {
+                example.innerHTML = `<p><b>Що це означає:</b> Ви завищуєте впевненість (точність ${fmt(accuracy)}%, впевненість ${fmt(avgConfidence)}%).<br><b>Порада:</b> при >80% впевненості робіть перевірку: факти, альтернативи, надійність джерел.</p>`;
+            } else {
+                example.innerHTML = `<p><b>Що це означає:</b> Ваша самооцінка досить точна.<br><b>Порада:</b> підтримуйте практику "прогнозування впевненості" перед відповіддю — це ще більше покращить калібрування.</p>`;
+            }
+            interpDiv.appendChild(example);
+
+
+
+            if (topicStats.length > 0) {
+                const topicsBlock = document.createElement('div');
+                topicsBlock.innerHTML = `<h4>Теми для уваги</h4>`;
+
+                const weakList = weakTopics.map(t =>
+                    `<li>${t.topic}: ${fmt(t.percent)}% (${t.correct}/${t.count}), ⌀${fmt(t.avgTime)} c — рекомендую повторити основу.</li>`
+                ).join('');
+
+                const strongList = strongTopics.map(t =>
+                    `<li>${t.topic}: ${fmt(t.percent)}% (${t.correct}/${t.count}), ⌀${fmt(t.avgTime)} c — гарний рівень, підтримуйте практикою.</li>`
+                ).join('');
+
+                if (weakList) topicsBlock.innerHTML += `<b>Слабкі:</b><ol>${weakList}</ol>`;
+                if (strongList) topicsBlock.innerHTML += `<b>Сильні:</b><ol>${strongList}</ol>`;
+
+                interpDiv.appendChild(topicsBlock);
+            }
+
+            el.resultCard.appendChild(createGroup('📌 Інтерпретація і поради', interpDiv));
+        }
+
+
+
+        /* ============================
+   Аналіз груп впевненості
+   Використовує createGroup(title, contentNode)
+   ============================ */
+        function renderConfidenceGroups(summary) {
+            if (!summary || summary.length === 0) {
+                const empty = document.createElement('div');
+                empty.textContent = 'Немає даних для аналізу груп впевненості.';
+                el.resultCard.appendChild(createGroup('🎯 Аналіз впевненості', empty));
+                return;
+            }
+
+            // --- групування за рівнями впевненості ---
+            const groups = {};
+            summary.forEach(answer => {
+                const c = answer.confidence;
+                if (!groups[c]) groups[c] = { total: 0, correct: 0, confidence: c };
+                groups[c].total++;
+                if (answer.correct) groups[c].correct++;
+            });
+
+            const stats = Object.values(groups).map(g => ({
+                confidence: g.confidence,
+                accuracy: g.correct / g.total * 100,
+                diff: (g.correct / g.total * 100) - g.confidence,
+                label: `${g.confidence}%`,
+                correct: g.correct,
+                total: g.total
+            }));
+
+            if (stats.length === 0) return;
+
+            // --- вибір ключових груп ---
+            // --- вибір ключових груп (виправлена логіка) ---
+            let best, worst, mid;
+
+            if (stats.length === 1) {
+                // Якщо тільки одна група — вона і best, і worst, і mid
+                best = worst = mid = stats[0];
+            } else {
+                // best: максимальна accuracy (при паритеті — більша total)
+                best = stats.reduce((a, b) => {
+                    if (a.accuracy === b.accuracy) return (a.total >= b.total ? a : b);
+                    return a.accuracy > b.accuracy ? a : b;
+                });
+
+                // worst: мінімальна accuracy (при паритеті — більша total)
+                worst = stats.reduce((a, b) => {
+                    if (a.accuracy === b.accuracy) return (a.total >= b.total ? a : b);
+                    return a.accuracy < b.accuracy ? a : b;
+                });
+
+                // mid: група з accuracy, найближчою до 50% (перевага більшій total при однаковій відстані)
+                const byDistanceTo50 = stats.slice().sort((x, y) => {
+                    const dx = Math.abs(x.accuracy - 50);
+                    const dy = Math.abs(y.accuracy - 50);
+                    if (dx === dy) return y.total - x.total; // більше спроб — вище в списку
+                    return dx - dy;
+                });
+
+                // вибираємо перший елемент, який не тотожний best/ worst (щоб уникнути дублювання)
+                mid = byDistanceTo50.find(s => s !== best && s !== worst) || byDistanceTo50[0];
+
+                // додатковий захист: якщо mid все ще дорівнює best або worst (дуже рідкий випадок),
+                // спробуємо вибрати інший елемент із stats
+                if (mid === best || mid === worst) {
+                    mid = stats.find(s => s !== best && s !== worst) || stats[0];
+                }
+            }
+
+            // --- блок для результату ---
+            const div = document.createElement('div');
+            div.innerHTML = `
+        <p><b>Найкраща група:</b> ${best.label} (${best.accuracy.toFixed(1)}% точність)</p>
+        <p><b>Середня група:</b> ${mid.label} (${mid.accuracy.toFixed(1)}% точність)</p>
+        <p><b>Найгірша група:</b> ${worst.label} (${worst.accuracy.toFixed(1)}% точність)</p>
+    `;
+            // --- інтерпретація (гнучкі правила) ---
+            const notes = [];
+
+            // 1) Сильна група (best)
+            if (best.confidence >= 80 && best.accuracy >= 80) {
+                notes.push(`✅ Якщо ви впевнені (${best.label}), то майже завжди праві — це добра ознака надійного прогнозування.`);
+            }
+            if (best.confidence >= 70 && best.accuracy < 50) {
+                notes.push(`⚠️ У групі ${best.label} ви впевнені, але часто помиляєтесь. Це ознака перевпевненості.`);
+            }
+            if (best.confidence <= 60 && best.accuracy >= 80) {
+                notes.push(`💡 У групі ${best.label} ви скромні у впевненості, але показуєте високі результати — недооцінюєте себе.`);
+            }
+
+            // 2) Слабка група (worst)
+            if (worst.confidence >= 50 && worst.accuracy < 50) {
+                notes.push(`⚠️ У групі ${worst.label} ви часто помиляєтесь. Це означає, що при "середній впевненості" ви схильні переоцінювати свої знання.`);
+            }
+            if (worst.confidence < 40 && worst.accuracy < 40) {
+                notes.push(`❌ У групі ${worst.label} ви і так низько оцінюєте знання, і результат підтверджує — ці теми справді слабкі.`);
+            }
+            if (worst.confidence < 40 && worst.accuracy > 60) {
+                notes.push(`💡 У групі ${worst.label} ви думаєте, що не знаєте, але результат хороший — ви "приємно недооцінюєте" себе.`);
+            }
+
+            // 3) Середня група (mid)
+            if (mid.accuracy > mid.confidence) {
+                notes.push(`💡 У групі ${mid.label} ви насправді знаєте більше, ніж думаєте. Це свідчить про схильність занижувати самооцінку.`);
+            }
+            if (mid.accuracy < mid.confidence) {
+                notes.push(`⚠️ У групі ${mid.label} ви демонструєте перевпевненість: точність нижча за заявлений рівень.`);
+            }
+            if (Math.abs(mid.accuracy - mid.confidence) <= 10) {
+                notes.push(`👌 У групі ${mid.label} ваша оцінка знань близька до реальності — це добре калібрована зона.`);
+            }
+
+
+            // 5) Загальні тенденції
+            if (best.confidence >= 90 && best.accuracy >= 90) {
+                notes.push(`🌟 Висока впевненість у ${best.label} абсолютно виправдана — це ваша сильна сторона.`);
+            }
+            if (worst.confidence >= 70 && worst.accuracy < 40) {
+                notes.push(`🚨 Небезпечна зона: у ${worst.label} ви сильно переоцінюєте себе — висока впевненість поєднується з низькою точністю.`);
+            }
+            if (mid.confidence <= 50 && mid.accuracy >= 70) {
+                notes.push(`✨ У ${mid.label} ви демонструєте "приховану силу": думаєте, що не знаєте, але відповідаєте добре.`);
+            }
+            if (mid.confidence >= 70 && mid.accuracy >= 70) {
+                notes.push(`👍 У ${mid.label} впевненість і точність збалансовані — ви добре оцінюєте власні можливості.`);
+            }
+
+            // 6) Структурний аналіз розподілу
+            const accValues = stats.map(s => s.accuracy);
+            const confValues = stats.map(s => s.confidence);
+
+            // Визначаємо глобальні тенденції
+            const allHigh = accValues.every(a => a >= 70);
+            const allLow = accValues.every(a => a <= 40);
+            const mostlyBalanced = accValues.every((a, i) => Math.abs(a - confValues[i]) <= 10);
+            const spread = Math.max(...accValues) - Math.min(...accValues);
+
+            // --- Правила ---
+            if (allHigh) {
+                notes.push(`🌟 Усі групи показують високу точність (${Math.min(...accValues)}–${Math.max(...accValues)}%). Це нетипово, але дуже сильний результат.`);
+            }
+            if (allLow) {
+                notes.push(`⚠️ Усі групи показують низьку точність (${Math.min(...accValues)}–${Math.max(...accValues)}%). Це свідчить про загальну нестачу знань у темі, а не лише про калібрування.`);
+            }
+            if (mostlyBalanced) {
+                notes.push(`👌 Ваші оцінки впевненості добре збігаються з точністю у всіх групах — рідкісний приклад гарної калібровки.`);
+            }
+            if (spread >= 60) {
+                notes.push(`📊 Різниця між групами занадто велика (${spread} п.п.). Це критичний дисбаланс: деякі рівні ви "читаєте" добре, а інші зовсім ні.`);
+            }
+            if (spread <= 30 && !allHigh && !allLow) {
+                notes.push(`🤔 Усі групи у приблизно схожому діапазоні (${spread} п.п. різниці). Це нетиповий "плоский" профіль — варто перевірити, чи правильно ви виставляли рівень впевненості.`);
+            }
+
+
+            // --- 7) Додаткові наукові правила ---
+            const avgAcc = accValues.reduce((a, b) => a + b, 0) / accValues.length;
+            const avgConf = confValues.reduce((a, b) => a + b, 0) / confValues.length;
+            const globalBias = avgConf - avgAcc; // середня упередженість
+
+            // Dunning-Kruger: слабкі групи з високою впевненістю
+            if (worst.confidence >= 70 && worst.accuracy <= 40 && best.accuracy >= 70) {
+                notes.push(`📉 Ефект Даннінга–Крюгера: у слабких зонах (${worst.label}) ви надто впевнені, хоча реальні знання низькі. Але у сильних (${best.label}) все добре.`);
+            }
+
+            // Chronic underconfidence
+            if (globalBias <= -15) {
+                notes.push(`🔵 Хронічне недооцінювання: у середньому ви відповідаєте краще, ніж думаєте. Це ознака заниженої самооцінки.`);
+            }
+
+            // Chronic overconfidence
+            if (globalBias >= 15) {
+                notes.push(`🔴 Хронічна перевпевненість: ваша загальна середня впевненість значно перевищує реальну точність.`);
+            }
+
+            // Metacognitive sensitivity (чи точність росте з впевненістю)
+            const sortedByConf = stats.slice().sort((a, b) => a.confidence - b.confidence);
+            let monotonic = true;
+            for (let i = 1; i < sortedByConf.length; i++) {
+                if (sortedByConf[i].accuracy < sortedByConf[i - 1].accuracy - 5) {
+                    monotonic = false; break;
+                }
+            }
+            if (monotonic && stats.length > 2) {
+                notes.push(`📈 Ваша метакогнітивна чутливість висока: чим більша впевненість, тим краща точність. Це ідеальна калібровка.`);
+            } else if (!monotonic && stats.length > 2) {
+                notes.push(`📉 Метакогнітивна чутливість низька: впевненість не завжди відповідає точності. Варто тренувати "відчуття правоти".`);
+            }
+
+            // Resolution (диференціація)
+            if (spread >= 30 && best.accuracy >= 70 && worst.accuracy <= 40) {
+                notes.push(`🎯 Висока "resolution": ви добре відрізняєте завдання, де праві, від тих, де помиляєтесь. Це цінна метакогнітивна навичка.`);
+            } else if (spread <= 15 && avgAcc < 70) {
+                notes.push(`⚠️ Низька "resolution": незалежно від впевненості результати схожі. Це свідчить про відсутність точного "внутрішнього барометра".`);
+            }
+
+            // Середні групи як критичні
+            if (mid && mid.confidence >= 50 && mid.confidence <= 70 && Math.abs(mid.accuracy - mid.confidence) >= 20) {
+                notes.push(`🟠 Група ${mid.label} критична: саме на "середніх рівнях впевненості" проявляється найбільше упереджень.`);
+            }
+
+
+            // --- 8) Часові закономірності ---
+            const minReadTime = 2;   // мінімальний час для прочитання
+            const fastThreshold = 5; // максимум для швидких відповідей
+            const longThreshold = 20; // мінімум для довгих відповідей
+
+            const fast = summary.filter(r => (r.timeSpent || 0) >= minReadTime && (r.timeSpent || 0) <= fastThreshold);
+            const long = summary.filter(r => (r.timeSpent || 0) > longThreshold);
+
+            // швидкі та довгі групи (точність)
+            const fastAcc = fast.length ? fast.filter(r => r.correct).length / fast.length * 100 : null;
+            const longAcc = long.length ? long.filter(r => r.correct).length / long.length * 100 : null;
+
+            if (fastAcc !== null && fastAcc < 50) {
+                notes.push(`⚡ Ви часто відповідаєте швидко і неточно (${fastAcc.toFixed(1)}% правильних). Це ознака імпульсивності.`);
+            }
+            if (fastAcc !== null && fastAcc >= 70) {
+                notes.push(`🚀 Ваші швидкі відповіді (${fastAcc.toFixed(1)}% правильних) свідчать про високу інтуїтивну компетентність.`);
+            }
+
+            if (longAcc !== null && longAcc < 50) {
+                notes.push(`🐢 Навіть після довгих роздумів точність низька (${longAcc.toFixed(1)}%). Це ознака неправильного розподілу часу або "перепрацювання" завдань.`);
+            }
+            if (longAcc !== null && longAcc >= 70) {
+                notes.push(`⏳ При ретельному підході ви даєте правильні відповіді (${longAcc.toFixed(1)}%). Це говорить про ефективне використання часу для перевірки.`);
+            }
+
+            // Час + впевненість
+            const rushedOverconf = summary.filter(r => r.timeSpent >= minReadTime && r.timeSpent <= fastThreshold && r.confidence >= 70 && !r.correct).length;
+            if (rushedOverconf > 2) {
+                notes.push(`⚠️ Є випадки "поспішної перевпевненості": висока впевненість + мало часу + помилка. Це небезпечна стратегія.`);
+            }
+
+            const carefulUnderconf = summary.filter(r => r.timeSpent > longThreshold && r.confidence <= 50 && r.correct).length;
+            if (carefulUnderconf > 2) {
+                notes.push(`💡 Є випадки "обережної недооцінки": ви довго думаєте, ставите низьку впевненість, але відповідаєте правильно. Це прихована сила.`);
+            }
+
+
+            // --- 9) Перевірка на "ботоподібну" поведінку ---
+            (function () {
+                const minReadTime = 3; // мінімальний час на прочитання питання (секунди)
+
+                console.log('test');
+                // --- 9.1: Усі відповіді однакові ---
+                const firstAnswer = summary[0]?.selectedText;
+                const sameAnswers = summary.every(r => r.selectedText === firstAnswer);
+                if (sameAnswers && summary.length >= 5 && summary.some(r => !r.correct)) {
+                    notes.push(`🤖 Усі відповіді однакові ("${firstAnswer}"). Це виглядає як випадкове або автоматичне кліканя.`);
+                }
+
+                // --- 9.2: Надто швидкі помилкові відповіді ---
+                const tooFastWrong = summary.filter(r => (r.timeSpent || 0) < minReadTime && !r.correct).length;
+                if (tooFastWrong / summary.length > 0.4) {
+                    notes.push(`🚨 Значна частина відповідей (${(tooFastWrong / summary.length * 100).toFixed(1)}%) були надто швидкими і неправильними (<${minReadTime}с). Це ознака неуважності або автокліку.`);
+                }
+
+                // --- 9.3: Серія однакових швидких відповідей ---
+                let streak = 1, maxStreak = 1;
+                for (let i = 1; i < summary.length; i++) {
+                    const prev = summary[i - 1];
+                    const curr = summary[i];
+                    const fast = (curr.timeSpent || 0) < minReadTime;
+                    if (curr.selectedText === prev.selectedText && fast && !curr.correct) {
+                        streak++;
+                        maxStreak = Math.max(maxStreak, streak);
+                    } else {
+                        streak = 1;
+                    }
+                }
+                if (maxStreak >= 5) {
+                    notes.push(`⚠️ Виявлена довга серія (${maxStreak}) однакових швидких і помилкових відповідей (<${minReadTime}с). Це виглядає як бездумне кліканя.`);
+                }
+
+                // --- 9.4: Середній час на питання занадто короткий ---
+                const avgTimeActual = summary.reduce((s, r) => s + (r.timeSpent || 0), 0) / summary.length;
+                if (avgTimeActual < minReadTime && summary.some(r => !r.correct)) {
+                    notes.push(`🤔 Середній час на питання ${avgTimeActual.toFixed(1)}с — занадто мало, щоб реально прочитати умову. Це свідчить про поверхневі або машинальні відповіді.`);
+                }
+            })();
+
+
+
+
+
+            // загальний висновок
+            if (notes.length === 0) {
+                notes.push(`ℹ️ Ваш розподіл груп досить збалансований — сильні й слабкі сторони проявляються помірно.`);
+            }
+
+            div.innerHTML += `<hr><b>Висновки:</b><ul>${notes.map(n => `<li>${n}</li>`).join('')}</ul>`;
+            el.resultCard.appendChild(createGroup('🎯 Аналіз груп впевненості', div));
+        }
+
+
+
+
+
+        function renderTimeHistogramCard(summary) {
+            const card = document.createElement('div');
+            card.innerHTML = `<canvas id="histCanvas" style="height:300px;"></canvas>`;
+
+            const group = createGroup("Час на питання (гістограма)", card);
+            el.resultCard.appendChild(group);
+
+            // Підписи: номер питання + тема
+            const labels = summary.map(h => `#${h.index} ${h.topic || "Тема"}`);
+            const times = summary.map(h => h.timeSpent);
+            const colors = summary.map(h => h.correct ? "#22c55e" : "#ef4444");
+
+            if (window.histChart) window.histChart.destroy();
+            window.histChart = new Chart(card.querySelector('#histCanvas').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Час на відповідь (сек)',
+                        data: times,
+                        backgroundColor: colors,
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Секунди' }
+                        },
+                        x: {
+                            title: { display: true, text: '№ Питання і тема' },
+                            ticks: {
+                                autoSkip: true,
+                                maxRotation: 90,
+                                minRotation: 90,
+                                callback: function (value, index) {
+                                    const label = this.getLabelForValue(value);
+                                    return label.length > 20 ? label.slice(0, 17) + '…' : label;
+                                },
+                                font: ctx => {
+                                    const w = ctx.chart.width;
+                                    if (w < 400) return { size: 8 };
+                                    if (w < 600) return { size: 10 };
+                                    return { size: 12 };
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                generateLabels: chart => [
+                                    { text: "Правильна відповідь", fillStyle: "#22c55e" },
+                                    { text: "Неправильна відповідь", fillStyle: "#ef4444" }
+                                ]
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: context => `${context.dataset.label}: ${context.raw} сек.`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+
+
+
+        /* ============================
+         Картка з детальними помилками
+         ============================ */
+        function renderDetailedSummaryCard() {
+            const card = document.createElement('div');
+            card.id = 'detailed-summary';
+
+
+
+            const group = createGroup("Ваші помилки:", card);
+            el.resultCard.appendChild(group);
+
+
+
+            const wrongAnswers = summary
+                .slice(-QUESTIONS.length)
+                .filter(item => !item.correct);
+
+            if (wrongAnswers.length === 0) {
+                card.innerHTML += `<p style="color: var(--muted)">Всі відповіді правильні! 🔥</p>`;
+                return;
+            }
+
+            // Групуємо помилки за темами
+            const grouped = {};
+            wrongAnswers.forEach(item => {
+                if (!grouped[item.topic]) grouped[item.topic] = [];
+                grouped[item.topic].push(item);
+            });
+
+            // Виводимо по темах
+            Object.keys(grouped).forEach(topic => {
+                const topicDiv = document.createElement('div');
+                topicDiv.className = 'group'; // без collapsed – відкрито спочатку
+
+                // заголовок групи з іконкою
+                const title = document.createElement('div');
+                title.className = 'group-title';
+                title.innerHTML = `<span class="arrow">▼</span> Тема: ${topic}`;
+                topicDiv.appendChild(title);
+
+                // контент (помилки з цієї теми)
+                const content = document.createElement('div');
+                content.className = 'group-content';
+
+                grouped[topic].forEach(item => {
+                    const q = QUESTIONS.find(q => q.text === item.question);
+                    const div = document.createElement('div');
+                    div.className = 'card2';
+                    div.innerHTML = `
+                <strong>Питання:</strong> ${item.question} <br>
+                ${q.questionImage ? `<img src="${q.questionImage}" alt="Зображення до питання" style="max-width:100%; margin:8px 0;">` : ''}
+                <span style="color:red;">Ваша відповідь: ${item.selectedText}</span><br>
+                <span style="color:green;">Правильна: ${q.options[q.answer].text}</span><br>
+                ${q.explanation ? `<em>${q.explanation}</em>` : ''}
+            `;
+                    content.appendChild(div);
+                });
+
+                topicDiv.appendChild(content);
+                card.appendChild(topicDiv);
+            });
+
+
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        /* ============================
+           Поділитися результатом (збереження PNG)
+           ============================ */
+        async function onShare() {
+            console.log("onShare start")
+            const details = document.getElementById('detailed-summary');
+            if (details) details.style.display = 'none';
+
+            // Чекаємо шрифти
+            await document.fonts.ready;
+
+            // 1. Тимчасово прибираємо проблемні стилі
+            const rotatedHeaders = document.querySelectorAll('#table th');
+            rotatedHeaders.forEach(th => {
+                th.dataset.oldTransform = th.style.transform;
+                th.dataset.oldWritingMode = th.style.writingMode;
+                th.style.transform = 'none';
+                th.style.writingMode = 'horizontal-tb';
+            });
+
+            // 2. Створюємо знімок
+            html2canvas(el.resultCard, {
+                scale: 2,
+                backgroundColor: null,
+                useCORS: true
+            }).then(canvas => {
+                // 3. Повертаємо стилі назад
+                rotatedHeaders.forEach(th => {
+                    th.style.transform = th.dataset.oldTransform;
+                    th.style.writingMode = th.dataset.oldWritingMode;
+                });
+
+                if (details) details.style.display = '';
+                const link = document.createElement('a');
+                link.href = canvas.toDataURL('image/png');
+                link.download = `calibration_result_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.png`;
+                link.click();
+            }).catch(err => {
+                alert('Помилка при генерації знімка: ' + err);
+                if (details) details.style.display = '';
+            });
+            console.log("onShare end")
+        }
+
+
+
+
+        function restartTest() {
+            // скинемо стан і почнемо спочатку
+            state = { index: 0, score: 0, selected: null, confidence: null };
+            el.resultCard.style.display = 'none';
+            el.testCard.style.display = '';
+            if (calibrationChart) calibrationChart.destroy();
+            renderQuestion();
+        }
+
+        /* ============================
+           Запуск
+           ============================ */
+        init();
+
+    </script>
+</body>
+
+</html>
