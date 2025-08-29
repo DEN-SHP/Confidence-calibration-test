@@ -1,5 +1,3 @@
-<img width="564" height="957" alt="image" src="https://github.com/user-attachments/assets/69cc515d-89bb-4d5f-8440-08273c5c5297" />
-
 Цей тест натхненний книгою Джулії Галеф "Мислення розвідника" (The Scout Mindset).
 Тест має незвичну шкалу відповідей - так або ні, але ви ще і вказуєте впевненість у своїй відповіді.
 
@@ -16,3 +14,14 @@
 Щоб такого не було, можна трішки корегувати свої прогнози, знаючи свою похибку. 
 
  Запрошую вас пройти тест, залишити відгук і поділитися результатами, якщо буде цікаво!
+
+ 
+Сторінка тестів
+
+<img width="564" height="957" alt="image" src="https://github.com/user-attachments/assets/69cc515d-89bb-4d5f-8440-08273c5c5297" />
+
+Сторінка результатів
+
+<img width="550" height="960" alt="image" src="https://github.com/user-attachments/assets/c2c26e62-b554-4b33-9d6f-fed8b7cd2349" />
+
+
